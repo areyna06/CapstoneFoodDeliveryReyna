@@ -1,5 +1,6 @@
 package com.projectreyna;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -23,12 +24,19 @@ public class RiderController {
 
     @FXML
     private void initialize() {
-        String email = LoginController.getLoggedInEmail();
+        /*
+         * Session validation: this screen reads the serialized
+         * session.dat file. If it does not exist, the user is
+         * sent back to the login screen.
+         */
+        SessionData session = SessionManager.getSession();
 
-        if (email != null && !email.isBlank()) {
-            welcomeLabel.setText("Welcome, " + email + "!");
+        if (session == null) {
+            Platform.runLater(this::redirectToLogin);
+            return;
         }
 
+        welcomeLabel.setText("Welcome, " + session.getEmail() + "!");
         messageLabel.setText("");
     }
 
@@ -53,6 +61,15 @@ public class RiderController {
 
     @FXML
     private void handleLogout() {
+        /*
+         * Logout: session.dat is deleted automatically and the
+         * user is redirected to the login screen.
+         */
+        LoginController.clearLoginSession();
+        redirectToLogin();
+    }
+
+    private void redirectToLogin() {
         try {
             changeScene(LOGIN_PAGE);
         } catch (IOException e) {

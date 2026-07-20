@@ -11,10 +11,6 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class LoginController {
 
@@ -31,10 +27,13 @@ public class LoginController {
     @FXML
     private Label messageLabel;
 
-    private static int loggedInUserId;
-    private static String loggedInName;
-    private static String loggedInEmail;
-    private static String loggedInRole;
+    /*
+     * Dependency Inversion Principle (DIP):
+     * The controller depends on the UserRepository abstraction,
+     * not on the concrete database class. All SQL code was moved
+     * out of this controller into MySqlUserRepository (SRP).
+     */
+    private final UserRepository userRepository = new MySqlUserRepository();
 
     /*
      * Prevents two scene changes from running at the same time.
@@ -62,79 +61,60 @@ public class LoginController {
             return;
         }
 
-        String sql = """
-                SELECT id, name, email, phone, password, address, role
-                FROM users
-                WHERE email = ? AND password = ?
-                LIMIT 1
-                """;
+        SessionData user = userRepository.findByCredentials(email, password);
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement statement =
-                        connection.prepareStatement(sql)
-        ) {
-            statement.setString(1, email);
-            statement.setString(2, password);
+        if (user == null) {
+            showError("Invalid email or password.");
+            passwordField.clear();
+            passwordField.requestFocus();
+            return;
+        }
 
-            try (ResultSet resultSet = statement.executeQuery()) {
+        String role = user.getRole();
 
-                if (!resultSet.next()) {
-                    showError("Invalid email or password.");
-                    passwordField.clear();
-                    passwordField.requestFocus();
-                    return;
-                }
+        if (role == null || role.isBlank()) {
+            showError("This account has no assigned role.");
+            return;
+        }
 
-                loggedInUserId = resultSet.getInt("id");
-                loggedInName = resultSet.getString("name");
-                loggedInEmail = resultSet.getString("email");
-                loggedInRole = resultSet.getString("role");
+        /*
+         * Clear data left by an earlier login.
+         */
+        Session.currentCustomer = null;
+        Session.currentRestaurant = null;
+        Session.currentOrder = null;
 
-                String phone = resultSet.getString("phone");
-                String savedPassword = resultSet.getString("password");
-                String address = resultSet.getString("address");
+        /*
+         * Serialization: write the logged-in user's information
+         * into session.dat. The rest of the application reads this
+         * file to validate and maintain the session.
+         */
+        SessionManager.createSession(user);
 
-                if (loggedInRole == null || loggedInRole.isBlank()) {
-                    showError("This account has no assigned role.");
-                    return;
-                }
+        try {
+            if (role.equalsIgnoreCase("CUSTOMER")) {
 
-                /*
-                 * Clear data left by an earlier login.
-                 */
-                Session.currentCustomer = null;
-                Session.currentRestaurant = null;
-                Session.currentOrder = null;
+                Session.currentCustomer = new Customer(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getPhone(),
+                        password,
+                        user.getAddress()
+                );
 
-                if (loggedInRole.equalsIgnoreCase("CUSTOMER")) {
+                sceneChanging = true;
+                changeScene(CUSTOMER_PAGE);
 
-                    Session.currentCustomer = new Customer(
-                            loggedInUserId,
-                            loggedInName,
-                            loggedInEmail,
-                            phone,
-                            savedPassword,
-                            address
-                    );
+            } else if (role.equalsIgnoreCase("RIDER")) {
 
-                    sceneChanging = true;
-                    changeScene(CUSTOMER_PAGE);
+                sceneChanging = true;
+                changeScene(RIDER_PAGE);
 
-                } else if (loggedInRole.equalsIgnoreCase("RIDER")) {
-
-                    sceneChanging = true;
-                    changeScene(RIDER_PAGE);
-
-                } else {
-                    showError("Unknown account role: " + loggedInRole);
-                }
+            } else {
+                SessionManager.destroySession();
+                showError("Unknown account role: " + role);
             }
-
-        } catch (SQLException e) {
-            sceneChanging = false;
-            showError("Database error: " + e.getMessage());
-            e.printStackTrace();
 
         } catch (IOException e) {
             sceneChanging = false;
@@ -192,30 +172,39 @@ public class LoginController {
         messageLabel.setText(message);
     }
 
+    /**
+     * Logout: deletes session.dat and clears in-memory session data.
+     */
     public static void clearLoginSession() {
-        loggedInUserId = 0;
-        loggedInName = null;
-        loggedInEmail = null;
-        loggedInRole = null;
+        SessionManager.destroySession();
 
         Session.currentCustomer = null;
         Session.currentRestaurant = null;
         Session.currentOrder = null;
     }
 
+    /*
+     * The getters below read the serialized session.dat file through
+     * SessionManager, so the application literally uses the serialized
+     * file to maintain the user's session while navigating.
+     */
     public static int getLoggedInUserId() {
-        return loggedInUserId;
+        SessionData session = SessionManager.getSession();
+        return session == null ? 0 : session.getId();
     }
 
     public static String getLoggedInName() {
-        return loggedInName;
+        SessionData session = SessionManager.getSession();
+        return session == null ? null : session.getName();
     }
 
     public static String getLoggedInEmail() {
-        return loggedInEmail;
+        SessionData session = SessionManager.getSession();
+        return session == null ? null : session.getEmail();
     }
 
     public static String getLoggedInRole() {
-        return loggedInRole;
+        SessionData session = SessionManager.getSession();
+        return session == null ? null : session.getRole();
     }
 }

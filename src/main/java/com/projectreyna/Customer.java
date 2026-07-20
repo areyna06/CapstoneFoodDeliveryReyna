@@ -5,7 +5,7 @@ public class Customer extends User {
     private Cart cart;
 
     public Customer(int id, String name, String email, String phone, String password, String address) {
-        super(id, name, email, phone, password);
+        super(id, name, email, password, phone);
         this.address = address;
         this.cart = new Cart();
     }
