@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="CENTER" spacing="14.0" prefWidth="420.0" prefHeight="560.0"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.projectreyna.RatingController">
+    <padding>
+        <Insets top="30.0" right="30.0" bottom="30.0" left="30.0"/>
+    </padding>
+    <children>
+        <Label text="Rate Your Order">
+            <font>
+                <Font name="System Bold" size="24.0"/>
+            </font>
+        </Label>
+        <Label text="How many stars?"/>
+        <ComboBox fx:id="starsBox" maxWidth="120.0"/>
+        <Label text="Comment (optional)"/>
+        <TextArea fx:id="commentArea" prefRowCount="4" wrapText="true" maxWidth="300.0"/>
+        <Button text="Submit Rating" onAction="#handleSubmitRating" maxWidth="260.0"/>
+    </children>
+</VBox>

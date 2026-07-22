@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="TOP_CENTER" spacing="10.0" prefWidth="420.0" prefHeight="560.0"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.projectreyna.CheckoutController">
+    <padding>
+        <Insets top="24.0" right="24.0" bottom="24.0" left="24.0"/>
+    </padding>
+    <children>
+        <Label text="Checkout">
+            <font>
+                <Font name="System Bold" size="22.0"/>
+            </font>
+        </Label>
+        <Label fx:id="addressLabel" text="Deliver to:"/>
+        <Label text="Your Order"/>
+        <ListView fx:id="orderItemsList" prefHeight="240.0"/>
+        <Label fx:id="totalLabel" text="Total: ₱0.00">
+            <font>
+                <Font name="System Bold" size="16.0"/>
+            </font>
+        </Label>
+        <Label text="Payment Method"/>
+        <ComboBox fx:id="paymentMethodBox" maxWidth="Infinity"/>
+        <Label fx:id="paymentMessageLabel" text=""/>
+        <HBox spacing="10.0" alignment="CENTER">
+            <children>
+                <Button text="Back to Menu" onAction="#handleBackToMenu"/>
+                <Button text="Place Order" onAction="#handlePlaceOrder"
+                        maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+            </children>
+        </HBox>
+    </children>
+</VBox>

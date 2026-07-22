@@ -20,8 +20,9 @@ public class MySqlRestaurantRepository implements RestaurantRepository {
 
         String sql = "SELECT id, name, location FROM restaurants ORDER BY name";
 
+        Connection connection = DBConnection.getInstance().getConnection();   // NOT in try()
+
         try (
-                Connection connection = DBConnection.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet resultSet = statement.executeQuery()
         ) {

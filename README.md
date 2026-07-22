@@ -48,6 +48,52 @@ LoginController  →  UserRepository (interface)  ←  MySqlUserRepository (impl
 
 **Benefit:** The high-level module (the controller) is decoupled from the low-level module (the database code). The data source can be swapped, for example to a file-based store or a mock repository for testing, without changing any controller code, which reduces class dependencies and improves testability.
 
+## Design Patterns Applied
+
+This project implements three design patterns — one from each of the three GoF categories (Creational, Structural, Behavioral).
+
+### 1. Creational — Singleton
+
+**Class involved:** `DBConnection`
+
+`DBConnection` ensures only one database connection object exists for the entire application. Its constructor is `private`, a single `static` instance is held internally, and the global access point `getInstance()` creates it lazily on first use and returns that same object on every later call.
+
+**Benefit:** Every repository and controller shares one MySQL connection instead of opening a new one each time, which avoids connection leaks and wasted resources.
+
+```
+Connection conn = DBConnection.getInstance().getConnection();
+```
+
+### 2. Structural — Facade
+
+**Class involved:** `OrderService`
+
+`OrderService` provides a single simplified entry point, `placeOrder(...)`, that hides the multi-step checkout process behind one call: building the `Order`, running the chosen payment method, recording the `Payment`, and setting the final order status.
+
+**Benefit:** `CheckoutController` calls one method instead of orchestrating the order, payment, and status subsystems itself, keeping the UI layer thin and decoupled from the internal order-processing logic.
+
+```
+Order order = new OrderService().placeOrder(
+        Session.nextOrderId(), customer, restaurant, items, strategy);
+```
+
+### 3. Behavioral — Strategy
+
+**Classes involved:** `PaymentStrategy` (interface), `CashPayment`, `GcashPayment`, `CardPayment`
+
+`PaymentStrategy` defines a common interface with three interchangeable implementations. The payment method is chosen at runtime from the checkout screen's dropdown, and the rest of the code works against the interface without knowing which concrete method is used.
+
+**Benefit:** A new payment method can be added by writing one more class that implements `PaymentStrategy`, with no changes to `OrderService` or `CheckoutController` (open/closed principle).
+
+```
+PaymentStrategy strategy = new GcashPayment(customer.getPhone());
+boolean paid = strategy.pay(order.getTotal());
+```
+
+## Design Patterns UML
+
+![Design Patterns Class Diagram](design_patterns.png)
+
 ## Technologies Used
 
 - Java / JavaFX (FXML) for the GUI

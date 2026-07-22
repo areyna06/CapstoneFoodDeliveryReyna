@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="TOP_CENTER" spacing="10.0" prefWidth="420.0" prefHeight="560.0"
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.projectreyna.MenuController">
+    <padding>
+        <Insets top="24.0" right="24.0" bottom="24.0" left="24.0"/>
+    </padding>
+    <children>
+        <Label fx:id="restaurantNameLabel" text="Restaurant">
+            <font>
+                <Font name="System Bold" size="22.0"/>
+            </font>
+        </Label>
+        <Label text="Menu"/>
+        <ListView fx:id="menuList" prefHeight="300.0"/>
+        <Button text="Add to Cart" onAction="#handleAddToCart" maxWidth="Infinity"/>
+        <Label fx:id="cartLabel" text="Cart: 0 item(s) — ₱0.00"/>
+        <HBox spacing="10.0" alignment="CENTER">
+            <children>
+                <Button text="Back" onAction="#handleBack"/>
+                <Button text="Checkout" onAction="#handleCheckout" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+            </children>
+        </HBox>
+    </children>
+</VBox>

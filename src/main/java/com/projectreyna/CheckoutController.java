@@ -67,71 +67,40 @@ public class CheckoutController {
 
     @FXML
     private void handlePlaceOrder() {
-        paymentMessageLabel.setText("");
-
-        if (Session.currentCustomer == null) {
-            showError("No customer is currently logged in.");
-            return;
-        }
-
-        if (Session.currentRestaurant == null) {
-            showError("No restaurant has been selected.");
-            return;
-        }
-
+        // guard: cart must have items
         if (cart == null || cart.getItems().isEmpty()) {
             showError("Your cart is empty.");
             return;
         }
 
-        String paymentMethod = paymentMethodBox.getValue();
-
-        if (paymentMethod == null || paymentMethod.isBlank()) {
-            showError("Please select a payment method.");
-            return;
+        // 1. pick the strategy from the ComboBox selection
+        String method = paymentMethodBox.getValue();
+        PaymentStrategy strategy;
+        if ("GCash".equals(method)) {
+            strategy = new GcashPayment(Session.currentCustomer.getPhone());
+        } else if ("Credit Card".equals(method)) {
+            strategy = new CardPayment("0000000000000000"); // placeholder card no.
+        } else {
+            strategy = new CashPayment();
         }
 
-        try {
-            Order order = Session.currentCustomer.placeOrder(
-                    Session.nextOrderId(),
-                    Session.currentRestaurant
-            );
+        // 2. place the order through the Facade
+        Order order = new OrderService().placeOrder(
+                Session.nextOrderId(),          // real unique ID from Session
+                Session.currentCustomer,
+                Session.currentRestaurant,
+                cart.getItems(),
+                strategy
+        );
 
-            if (order == null) {
-                showError("Unable to create the order.");
-                return;
-            }
-
-            Payment payment = new Payment(
-                    order.getOrderId(),
-                    paymentMethod,
-                    order.getTotal()
-            );
-
-            if (!payment.process()) {
-                showError("Payment failed. Try another payment method.");
-                return;
-            }
-
-            order.setPayment(payment);
-            order.updateStatus("Confirmed");
-
-            /*
-             * This must be assigned before loading tracking-view.fxml.
-             * TrackingController reads Session.currentOrder.
-             */
-            Session.currentOrder = order;
-
-            showSuccess("Order placed successfully.");
-
-            SceneSwitcher.switchTo(
-                    "tracking-view.fxml",
-                    totalLabel
-            );
-
-        } catch (Exception e) {
-            showError("Unable to place the order: " + e.getMessage());
-            e.printStackTrace();
+        // 4. react to the result
+        if (order.getStatus().equals("CONFIRMED")) {
+            Session.currentOrder = order;               // <-- ADD THIS LINE
+            cart.clear();
+            showSuccess("Order confirmed! Total: ₱" + String.format("%.2f", order.getTotal()));
+            SceneSwitcher.switchTo("tracking-view.fxml", totalLabel);
+        } else {
+            showError("Payment failed. Please try again.");
         }
     }
 

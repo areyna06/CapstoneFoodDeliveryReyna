@@ -19,16 +19,15 @@ public class MySqlUserRepository implements UserRepository {
     @Override
     public SessionData findByCredentials(String email, String password) {
         String sql = """
-                SELECT id, name, email, phone, address, role
-                FROM users
-                WHERE email = ? AND password = ?
-                LIMIT 1
-                """;
+            SELECT id, name, email, phone, address, role
+            FROM users
+            WHERE email = ? AND password = ?
+            LIMIT 1
+            """;
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)
-        ) {
+        Connection connection = DBConnection.getInstance().getConnection();   // NOT in try()
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, email);
             statement.setString(2, password);
 
